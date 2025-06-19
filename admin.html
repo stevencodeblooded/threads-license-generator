@@ -158,6 +158,7 @@
         border-radius: 8px;
         border: 1px solid #262626;
         overflow: hidden;
+        margin-bottom: 80px;
       }
 
       table {
@@ -329,6 +330,110 @@
           gap: 15px;
         }
       }
+
+      .action-dropdown {
+        position: relative;
+        display: inline-block;
+      }
+
+      .action-btn-menu {
+        padding: 8px 16px;
+        background-color: #262626;
+        border: 1px solid #363636;
+        color: #e4e6eb;
+        border-radius: 6px;
+        font-size: 13px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+      }
+
+      .action-btn-menu:hover {
+        background-color: #363636;
+        border-color: #4a4a4a;
+      }
+
+      .action-btn-menu svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: #1a1a1a;
+        min-width: 180px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        border: 1px solid #262626;
+        border-radius: 8px;
+        z-index: 1;
+        margin-top: 4px;
+        overflow: hidden;
+      }
+
+      .dropdown-content.show {
+        display: block;
+      }
+
+      .dropdown-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #e4e6eb;
+        font-size: 13px;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        transition: background-color 0.2s;
+      }
+
+      .dropdown-item:hover {
+        background-color: #262626;
+      }
+
+      .dropdown-item.danger {
+        color: #e41e3f;
+      }
+
+      .dropdown-item.success {
+        color: #00d46a;
+      }
+
+      .dropdown-item.primary {
+        color: #1877f2;
+      }
+
+      .dropdown-divider {
+        height: 1px;
+        background-color: #262626;
+        margin: 4px 0;
+      }
+
+      /* Icon styles */
+      .dropdown-item svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* Add this to your existing styles */
+      .action-dropdown {
+        position: relative;
+        display: inline-block;
+      }
+
+      /* Dropdown that opens upward */
+      .dropdown-content.dropup {
+        bottom: 100%;
+        top: auto;
+        margin-bottom: 4px;
+        margin-top: 0;
+      }
     </style>
   </head>
   <body>
@@ -479,8 +584,8 @@
     </div>
 
     <script>
-    //   const API_BASE = "http://localhost:3000/api";
-      const API_BASE = 'https://scratch-certain-gravity.glitch.me/api';
+      //   const API_BASE = "http://localhost:3000/api";
+      const API_BASE = "https://scratch-certain-gravity.glitch.me/api";
       let apiKey = "";
       let allLicenses = [];
       let searchTimeout;
@@ -618,16 +723,7 @@
                         <td>${new Date(
                           license.createdAt
                         ).toLocaleDateString()}</td>
-                        <td>
-                            ${license.status === "revoked"
-                                ? `<button class="action-btn" style="background-color: #00d46a;" onclick="reactivateLicense('${license.key}')">Reactivate</button>`
-                                : `<button class="action-btn" onclick="revokeLicense('${license.key}')">Revoke</button>`
-                            }
-                            ${(license.status !== "revoked" && (license.daysLeft <= 7 || license.daysLeft < 0))
-                                ? `<button class="action-btn" style="background-color: #1877f2; margin-left: 5px;" onclick="extendLicense('${license.key}')">Extend</button>`
-                                : ''
-                            }
-                        </td>
+                        <td>${getActionButtons(license)}</td>
                     </tr>
                 `;
         });
@@ -701,34 +797,45 @@
       }
 
       async function extendLicense(key) {
-        const days = prompt('How many days to extend this license?', '30');
+        const days = prompt("How many days to extend this license?", "30");
         if (!days || isNaN(days) || days <= 0) return;
-        
-        if (!confirm(`Are you sure you want to extend this license by ${days} days?`)) {
-            return;
+
+        if (
+          !confirm(
+            `Are you sure you want to extend this license by ${days} days?`
+          )
+        ) {
+          return;
         }
-        
+
         try {
-            const response = await fetch(`${API_BASE}/admin/licenses/${key}/extend`, {
-                method: 'POST',
-                headers: {
-                    'X-API-Key': apiKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ days: parseInt(days) })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                showSuccess(`License extended successfully! New expiry: ${new Date(data.newExpiryDate).toLocaleDateString()}`);
-                loadLicenses(); // Reload the list
-            } else {
-                throw new Error('Failed to extend license');
+          const response = await fetch(
+            `${API_BASE}/admin/licenses/${key}/extend`,
+            {
+              method: "POST",
+              headers: {
+                "X-API-Key": apiKey,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ days: parseInt(days) }),
             }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            showSuccess(
+              `License extended successfully! New expiry: ${new Date(
+                data.newExpiryDate
+              ).toLocaleDateString()}`
+            );
+            loadLicenses(); // Reload the list
+          } else {
+            throw new Error("Failed to extend license");
+          }
         } catch (error) {
-            showError('Failed to extend license: ' + error.message);
+          showError("Failed to extend license: " + error.message);
         }
-    }
+      }
 
       function debounceSearch() {
         clearTimeout(searchTimeout);
@@ -780,6 +887,103 @@
           authError.style.display = "none";
         }, 5000);
       }
+
+      // Add this function after your extendLicense function
+      function getActionButtons(license) {
+        const isRevoked = license.status === "revoked";
+        const needsExtension =
+          !isRevoked && (license.daysLeft <= 7 || license.daysLeft < 0);
+
+        return `
+    <div class="action-dropdown">
+      <button class="action-btn-menu" onclick="toggleDropdown(event, '${
+        license.key
+      }')">
+        Actions
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/>
+        </svg>
+      </button>
+      <div class="dropdown-content" id="dropdown-${license.key}">
+        ${
+          !isRevoked
+            ? `
+          ${
+            needsExtension
+              ? `
+            <button class="dropdown-item primary" onclick="extendLicense('${license.key}'); closeDropdowns();">
+              <svg fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
+              </svg>
+              Extend License
+            </button>
+            <div class="dropdown-divider"></div>
+          `
+              : ""
+          }
+          <button class="dropdown-item danger" onclick="revokeLicense('${
+            license.key
+          }'); closeDropdowns();">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"/>
+            </svg>
+            Revoke License
+          </button>
+        `
+            : `
+          <button class="dropdown-item success" onclick="reactivateLicense('${license.key}'); closeDropdowns();">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/>
+            </svg>
+            Reactivate License
+          </button>
+        `
+        }
+      </div>
+    </div>
+  `;
+      }
+
+      // Add these functions right after getActionButtons
+      function toggleDropdown(event, key) {
+        event.stopPropagation();
+        const dropdown = document.getElementById(`dropdown-${key}`);
+        const allDropdowns = document.querySelectorAll(".dropdown-content");
+
+        // Close all other dropdowns
+        allDropdowns.forEach((d) => {
+          if (d !== dropdown) {
+            d.classList.remove("show");
+            d.classList.remove("dropup");
+          }
+        });
+
+        // Toggle the current dropdown
+        dropdown.classList.toggle("show");
+
+        // Check if dropdown should open upward
+        if (dropdown.classList.contains("show")) {
+          const rect = dropdown.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          const spaceBelow = viewportHeight - rect.bottom;
+          const spaceAbove = rect.top;
+
+          // If not enough space below and more space above, open upward
+          if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+            dropdown.classList.add("dropup");
+          } else {
+            dropdown.classList.remove("dropup");
+          }
+        }
+      }
+
+      function closeDropdowns() {
+        document.querySelectorAll(".dropdown-content").forEach((d) => {
+          d.classList.remove("show");
+        });
+      }
+      // Close dropdowns when clicking outside
+      document.addEventListener("click", closeDropdowns);
     </script>
   </body>
 </html>
