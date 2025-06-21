@@ -677,6 +677,7 @@
         }
       }
 
+      // Replace the existing updateStats function with this enhanced version:
       function updateStats() {
         const stats = {
           total: allLicenses.length,
@@ -687,11 +688,28 @@
           custom: allLicenses.filter((l) => l.type === "custom").length,
         };
 
-        document.getElementById("totalActive").textContent = stats.active;
-        document.getElementById("totalTrial").textContent = stats.trial;
-        document.getElementById("totalBasic").textContent = stats.basic;
-        document.getElementById("totalPro").textContent = stats.pro;
-        document.getElementById("totalCustom").textContent = stats.custom;
+        // Update values and show/hide cards based on count
+        updateStatCard("totalActive", stats.active, true); // Always show total active
+        updateStatCard("totalTrial", stats.trial);
+        updateStatCard("totalBasic", stats.basic);
+        updateStatCard("totalPro", stats.pro);
+        updateStatCard("totalCustom", stats.custom);
+      }
+
+      // Add this new helper function:
+      function updateStatCard(elementId, value, alwaysShow = false) {
+        const element = document.getElementById(elementId);
+        const card = element.closest(".stat-card");
+
+        // Update the value
+        element.textContent = value;
+
+        // Show or hide the entire card based on value
+        if (alwaysShow || value > 0) {
+          card.style.display = "block";
+        } else {
+          card.style.display = "none";
+        }
       }
 
       function displayLicenses(licenses) {
