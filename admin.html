@@ -157,13 +157,14 @@
         background-color: #101010;
         border-radius: 8px;
         border: 1px solid #262626;
-        overflow: hidden;
+        overflow: visible; /* Changed from hidden to visible */
         margin-bottom: 80px;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
+        position: relative; /* Add this */
       }
 
       th {
@@ -334,8 +335,8 @@
       .action-dropdown {
         position: relative;
         display: inline-block;
+        min-width: 80px; /* Ensure minimum width */
       }
-
       .action-btn-menu {
         padding: 8px 16px;
         background-color: #262626;
@@ -369,9 +370,10 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         border: 1px solid #262626;
         border-radius: 8px;
-        z-index: 1;
+        z-index: 1000; /* Increased z-index */
         margin-top: 4px;
         overflow: hidden;
+        max-height: 300px; /* Add max height */
       }
 
       .dropdown-content.show {
@@ -421,18 +423,30 @@
         height: 16px;
       }
 
-      /* Add this to your existing styles */
-      .action-dropdown {
-        position: relative;
-        display: inline-block;
-      }
-
       /* Dropdown that opens upward */
       .dropdown-content.dropup {
         bottom: 100%;
         top: auto;
         margin-bottom: 4px;
         margin-top: 0;
+      }
+
+      /* Add this media query to your existing CSS */
+      @media (max-width: 768px) {
+        .dropdown-content {
+          right: -20px; /* Adjust for mobile */
+          left: auto;
+          min-width: 160px;
+        }
+
+        .action-dropdown {
+          min-width: 60px;
+        }
+
+        .licenses-table {
+          overflow-x: auto;
+          overflow-y: visible; /* Important for mobile */
+        }
       }
     </style>
   </head>
@@ -945,6 +959,7 @@
       }
 
       // Add these functions right after getActionButtons
+      // Replace the toggleDropdown function with this improved version:
       function toggleDropdown(event, key) {
         event.stopPropagation();
         const dropdown = document.getElementById(`dropdown-${key}`);
@@ -963,17 +978,43 @@
 
         // Check if dropdown should open upward
         if (dropdown.classList.contains("show")) {
-          const rect = dropdown.getBoundingClientRect();
+          // Get button and dropdown positions
+          const button = event.target.closest(".action-btn-menu");
+          const buttonRect = button.getBoundingClientRect();
           const viewportHeight = window.innerHeight;
-          const spaceBelow = viewportHeight - rect.bottom;
-          const spaceAbove = rect.top;
 
-          // If not enough space below and more space above, open upward
-          if (spaceBelow < 200 && spaceAbove > spaceBelow) {
+          // Calculate space above and below
+          const spaceBelow = viewportHeight - buttonRect.bottom;
+          const spaceAbove = buttonRect.top;
+
+          // Estimated dropdown height
+          const dropdownHeight = 150; // Approximate height
+
+          // If not enough space below but enough space above, open upward
+          if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
             dropdown.classList.add("dropup");
           } else {
             dropdown.classList.remove("dropup");
           }
+
+          // Additional check: if still not enough space, adjust position
+          setTimeout(() => {
+            const dropdownRect = dropdown.getBoundingClientRect();
+
+            // If dropdown goes below viewport, force it upward
+            if (dropdownRect.bottom > viewportHeight - 10) {
+              dropdown.classList.add("dropup");
+            }
+
+            // If dropdown goes above viewport when upward, keep it downward but adjust
+            if (
+              dropdown.classList.contains("dropup") &&
+              dropdownRect.top < 10
+            ) {
+              dropdown.classList.remove("dropup");
+              dropdown.style.maxHeight = `${spaceBelow - 20}px`;
+            }
+          }, 0);
         }
       }
 
